@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #ff6f61;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .cart-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item span {
+            font-size: 18px;
+            font-weight: 500;
+        }
+
+        .quantity-btn {
+            padding: 5px 12px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .quantity-btn:hover {
+            background-color: #ddd;
+        }
+
+        .remove-btn {
+            background-color: #e75d50;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+
+        .remove-btn:hover {
+            background-color: #ff6f61;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .btn-container a {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px;
+            background-color: #ff6f61;
+            color: white;
+            font-size: 18px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-container a:hover {
+            background-color: #e75d50;
+        }
+
+        .total-price {
+            text-align: right;
+            font-size: 22px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Your Cart</h1>
+    </header>
+
+    <div class="cart-container">
+        <ul>
+            {% if cart_items %}
+                {% for item in cart_items %}
+                <li id="cart-item-{{ item.id }}" class="cart-item">
+                    <span>{{ item.name }} - ₹{{ item.price }}</span>
+                    <div>
+                        <button class="quantity-btn" onclick="updateQuantity({{ item.menu_item_id }}, 'decrease')">-</button>
+                        <span id="quantity-{{ item.id }}">{{ item.quantity }}</span>
+                        <button class="quantity-btn" onclick="updateQuantity({{ item.menu_item_id }}, 'increase')">+</button>
+
+                        <button class="remove-btn" onclick="removeItem({{ item.id }})">Remove</button>
+                    </div>
+                </li>
+                {% endfor %}
+            {% else %}
+                <p>Your cart is empty.</p>
+            {% endif %}
+        </ul>
+
+        <div class="total-price">
+            <span>Total: ₹<span id="total-price">{{ total }}</span></span>
+        </div>
+
+        <div class="btn-container">
+            <a href="/" class="continue-shopping-btn">Continue Shopping</a>
+            <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+        </div>
+    </div>
+
+    <script>
+  function updateQuantity(itemId, action) {
+    fetch('/update-cart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId, action: action }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const quantityElement = document.getElementById(`quantity-${itemId}`);
+            if (action === 'increase') {
+                quantityElement.innerText = parseInt(quantityElement.innerText) + 1;
+            } else if (action === 'decrease' && parseInt(quantityElement.innerText) > 1) {
+                quantityElement.innerText = parseInt(quantityElement.innerText) - 1;
+            }
+
+            document.getElementById('total-price').innerText = data.total;
+        } else {
+            alert(data.message || 'Error updating the quantity.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function removeItem(itemId) {
+    fetch('/remove-item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            const itemElement = document.getElementById(`cart-item-${itemId}`);
+            if (itemElement) {
+                itemElement.remove();
+            }
+
+            document.getElementById('total-price').innerText = data.total;
+
+            if (data.cart_empty) {
+                document.querySelector('.cart-container ul').innerHTML = "<p>Your cart is empty.</p>";
+            }
+        } else {
+            alert(data.message || 'Error removing item.');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+
+    </script>
+</body>
+</html>

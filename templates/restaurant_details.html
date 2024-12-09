@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name }} Menu</title>
+    <link rel="stylesheet" href="/static/restaurant_details.css"> <!-- Add your custom CSS -->
+    <style>
+        /* Add these styles to your CSS file or within <style> tags */
+
+        /* Styling for the menu items */
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+            margin: 10px 0;
+        }
+
+        .menu-item p {
+            margin: 0;
+        }
+
+        .menu-item img {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: cover;
+        }
+
+        .add-to-cart {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+            width: 150px;
+        }
+
+        .add-to-cart:hover {
+            background-color: #218838;
+        }
+
+        /* Aligning the button to the right */
+        .menu-item .add-to-cart {
+            flex-shrink: 0; /* Prevent shrinking */
+            margin-left: auto; /* Push it to the right */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" style="background-image: url('{{ restaurant.image_url }}');">
+        <div class="overlay">
+            <h1>{{ restaurant.name }}</h1>
+            <p style="font-size: larger;">{{ restaurant.cuisine }}</p>
+            <p>{{ restaurant.address }}</p>
+        </div>
+    </header>
+
+    <!-- Menu Section -->
+    <section class="menu-section">
+        <div class="menu-categories">
+            <h3>Menu Categories</h3>
+            <ul id="category-list">
+                {% if menu_items %}
+                    {% for category in menu_items | map(attribute='category') | unique %}
+                        <li onclick="filterMenu('{{ category }}')">{{ category }}</li>
+                    {% endfor %}
+                {% else %}
+                    <p>No menu categories available</p>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="menu-items">
+            <h2>Menu Items</h2>
+            <div id="menu-content">
+                {% if menu_items %}
+                    {% for category in menu_items | map(attribute='category') | unique %}
+                        <div class="menu-category" id="category-{{ category }}" style="display: none;">
+                            <h4>{{ category }}</h4>
+                            <div class="menu-items-list">
+                                {% for item in menu_items if item.category == category %}
+                                    <div class="menu-item">
+                                        <div>
+                                            <p><strong>{{ item.name }}</strong></p>
+                                            <p>{{ item.description }}</p>
+                                            <p>Price: ₹{{ item.price }}</p>
+                                        </div>
+                                        <img src="{{ url_for('static', filename=item.img_url) }}" alt="{{ item.name }}">
+                                        <button class="add-to-cart" onclick="addToCart('{{ item.id }}')">Add to Cart</button>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>No menu items available</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to Index Section -->
+    <section class="back-to-index-section" style="text-align: center; margin-top: 20px;">
+        <a href="/" class="back-btn" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-align: center; text-decoration: none; border-radius: 5px; font-size: 16px; transition: background-color 0.3s;">
+            Back
+        </a>
+        <a href="/cart" class="view-cart-btn" style="position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">
+            View Cart
+        </a>
+    </section>
+
+    <!-- Link to External JavaScript -->
+    <script src="/static/style.js"></script> <!-- Your JavaScript file -->
+
+    <!-- JavaScript Section -->
+   <script>
+  function addToCart(itemId) {
+    fetch('/add-to-cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ item_id: itemId, action: 'increase' })
+    }).then(response => response.json())
+    .then(data => {
+        if (data.status !== 'success') {
+            // Handle failure, you can show an error message or update the UI accordingly
+            console.error('Failed to add item to cart.');
+        }
+    }).catch(error => {
+        // Handle error, show an error message or update the UI accordingly
+        console.error('Error: ' + error);
+    });
+}
+</script>
+</body>
+</html>
+
+
